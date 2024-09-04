@@ -1,6 +1,12 @@
-# Dailymotion plugin for Grayjay - work in progress
+# Dailymotion plugin for Grayjay
 
-Click [here](https://stefancruz.github.io/GrayjayDailymotion/index.html) to install into Grayjay
+This plugin is now being maintained by the Grayjay team. 
+
+The new upstream can be found at: https://gitlab.futo.org/videostreaming/plugins/dailymotion
+
+Click [here](https://plugins.grayjay.app/) to install into Grayjay
+
+For issues: https://github.com/futo-org/grayjay-android/issues/new/choose
 
 ## Features
 - [x] - Home
