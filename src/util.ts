@@ -1,28 +1,70 @@
+import { ISourcePluginSettings } from '../types/types';
 import { DEFAULT_HEADERS, PLATFORM_SHORT } from './constants';
 
-let errorLog: string = "";
+enum LogLevel {
+  None,
+  Critical,
+  Error,
+  Warning,
+  Notice,
+  Information,
+  Debug,
+  Trace
+}
 
-export const error = (message: string, error: any, _throw: boolean = false): void => {
-  const fmt: string = log(`${message}: ${error} (${JSON.stringify(error)})`, true);
-  if (_throw) {
-    const log: string = errorLog; errorLog = "";
-    throw new ScriptException(`${fmt}\n\n${log}`);
+class Logger {
+  private static instance: Logger;
+  private settings: ISourcePluginSettings;
+
+
+  private constructor(settings: ISourcePluginSettings) {this.settings = settings}
+
+  public static getInstance(settings: ISourcePluginSettings): Logger {
+    if (!Logger.instance) Logger.instance = new Logger(settings);
+    return Logger.instance;
   }
-}
 
-export const log = (message: any, toast: boolean = false): string => {
-  message = JSON.stringify(message);
-  const formattedMessage: string = `[${new Date().toISOString()}] [${PLATFORM_SHORT}] ${message}`;
-  log(formattedMessage);
-  if (toast) bridge.toast(message);
-  try {
-    if (logErrors) errorLog += `${errorLog}\n${message}`;
-  } catch (error) { }
-  return formattedMessage;
-}
+  public log(message: any, log_level: LogLevel = LogLevel.Information): string {
+    message = JSON.stringify(message);
+    const formattedMessage: string = `[${new Date().toISOString()}] [${PLATFORM_SHORT}] ${message}`;
+    
+    if (log_level >= this.settings.log_level_log_index) {
+      console.log(formattedMessage);
+      bridge.log(formattedMessage);
+    }
+    if (log_level >= this.settings.log_level_toast_index) {
+      bridge.toast(message);
+    }    
+    return formattedMessage;
+  }
 
-export const debug = (obj: any): void => {
-  bridge.throwTest((log(`Debug: ${JSON.stringify(obj)}`)));
+  public none(message: any): string {
+    return this.log(message, LogLevel.Information);
+  }
+
+  public critical(message: any): string {
+    return this.log(message, LogLevel.Critical);
+  }
+
+  public error(message: any): string {
+    return this.log(message, LogLevel.Error);
+  }
+
+  public warning(message: any): string {
+    return this.log(message, LogLevel.Warning);
+  }
+
+  public info(message: any): string {
+    return this.log(message, LogLevel.Information);
+  }
+
+  public debug(message: any): string {
+    return this.log(message, LogLevel.Debug);
+  }
+
+  public trace(message: any): string {
+    return this.log(message, LogLevel.Trace);
+  }
 }
 
 export const prepend = (array: any[], value: any): any[] => {

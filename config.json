@@ -314,7 +314,8 @@
         "Critical",
         "Error",
         "Warning",
-        "Info",
+        "Notice",
+        "Information",
         "Debug",
         "Trace"
       ]
@@ -330,7 +331,8 @@
         "Critical",
         "Error",
         "Warning",
-        "Info",
+        "Notice",
+        "Information",
         "Debug",
         "Trace"
       ]

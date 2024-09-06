@@ -59,6 +59,6 @@ export const DEFAULT_HEADERS:Record<string, string> = {
 export const DEFAULT_SETTINGS:ISourcePluginSettings = {
   enable: true,
   prefered_country_code_index: 0, // Global
-  log_level_log_index: 3, // Warning
-  log_level_toast_index: 2, // Error
+  log_level_log_index: IS_TESTING ? 6 : 3, // Warning
+  log_level_toast_index: IS_TESTING ? 2 : 3, // Error
 }
