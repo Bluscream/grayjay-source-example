@@ -1,56 +1,26 @@
-# Dailymotion plugin for Grayjay
+# Example source for Grayjay
 
-This plugin is now being maintained by the Grayjay team. 
-
-The new upstream can be found at: https://gitlab.futo.org/videostreaming/plugins/dailymotion
-
-Click [here](https://plugins.grayjay.app/) to install into Grayjay
-
-For issues: https://github.com/futo-org/grayjay-android/issues/new/choose
-
-## Features
-- [x] - Home
-- [x] - Home search
-- [x] - Live videos from home search
-- [x] - Search autocomplete
-- [x] - Video details (likes, dislikes, views, publish date)
-- [x] - Subscriptions
-- [x] - Channel search
-- [x] - Channel details
-- [x] - Channel playlist tab
-- [x] - Downloads
-- [x] - Playlists search
-- [x] - Settings / Thumbnail resolution
-- [x] - Settings / Creator avatar resolution
-- [x] - Settings / Hide sensitive content
-- [x] - Settings / Prefered Country
-- [x] - Sign in (import subscriptions and playlists (and Likes, Favorites, Recently Watched))
-- [x] - Polycentric Comments
-- [x] - Subtitles
-- [x] - Platform comments (not generally available on Platform) - (WIP)
-
-## Work in progress (WIP)
-
-- [ ] - Harbor account verification
+### Features
 
 
-## Grayjay
-- [ ] - Live filter in Subscriptions tab
-- [ ] - Thumbnails for vertical videos
+### Work in progress (WIP)
 
-## Dailymotion
-- [ ] - API fields deprecated with replacement not available yet (createdAt - createDate requires authentication, video?.viewCount, video?.stats?.views?.total);
-- [ ] - Platform comments
 
-## Install
-npm install
+### Grayjay
 
-## Build
 
-npm run build
+### Platform
 
-npm start - will build and watch for changes
 
-## Notes
+## Development
+
+### Prepare
+- `npm install`
+
+### Build
+- `npm run build`
+- `npm start` - will build and watch for changes
+
+### Notes
 - Content of the 'build' folder should not be manually changed since it's recreated for each build. 
 - Used [rollup](https://rollupjs.org/) to bundle the scripts.

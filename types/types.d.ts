@@ -1,4 +1,4 @@
-import { Video, Live } from "./CodeGenDailymotion";
+import { Video, Live } from "./CodeGen";
 
 type DailymotionStreamingContent = Video | Live | null;
 

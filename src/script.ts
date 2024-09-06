@@ -65,7 +65,7 @@ import {
   Video,
   VideoConnection,
   VideoEdge,
-} from '../types/CodeGenDailymotion';
+} from '../types/CodeGen';
 
 import {
   SearchPagerAll,

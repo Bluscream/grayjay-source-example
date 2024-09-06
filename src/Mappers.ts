@@ -4,7 +4,7 @@ import {
   Live,
   Maybe,
   Video,
-} from '../types/CodeGenDailymotion';
+} from '../types/CodeGen';
 
 import {
   DailymotionStreamingContent,
