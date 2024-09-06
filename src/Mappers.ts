@@ -13,11 +13,15 @@ import {
   BASE_URL_CHANNEL,
   PLATFORM,
   PLATFORM_CLAIMTYPE,
+  DEFAULT_SETTINGS
 } from './constants';
 
 import {
-  convertSRTtoVTT
+  convertSRTtoVTT,
+  Logger
 } from './util'
+
+const logger = Logger.getInstance(DEFAULT_SETTINGS);
 
 export const SourceChannelToGrayjayChannel = (
   pluginId: string,
@@ -252,14 +256,14 @@ export const SourceVideoToPlatformVideoDetailsDef = (
 
               if (!subResp.isOk) {
                 if (IS_TESTING) {
-                  bridge.log(`Failed to fetch subtitles from ${subtitleUrl}`);
+                  logger.error(`Failed to fetch subtitles from ${subtitleUrl}`);
                 }
                 return '';
               }
               return convertSRTtoVTT(subResp.body);
             } catch (error: any) {
               if (IS_TESTING) {
-                bridge.log(`Error fetching subtitles: ${error?.message}`);
+                logger.error(`Error fetching subtitles: ${error?.message}`);
               }
               return '';
             }

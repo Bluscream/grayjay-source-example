@@ -5,6 +5,8 @@ const state = {
   channelsCache: {} as Record<string, PlatformChannel>
 };
 
+let logger: Logger;
+
 // region Imports
 import {
   BASE_URL,
@@ -21,7 +23,7 @@ import {
   DEFAULT_SETTINGS
 } from './constants';
 
-import { getChannelNameFromUrl, getQuery, generateUUIDv4, applyCommonHeaders } from './util';
+import { getChannelNameFromUrl, getQuery, generateUUIDv4, applyCommonHeaders, Logger } from './util';
 
 import {
   Maybe,
@@ -62,18 +64,22 @@ import {
 
 // region Source Methods
 source.setSettings = function (settings) {
-  log(`source.setSettings(${settings})`);
+  logger.trace(`source.setSettings(settings=${settings})`);
   _settings = settings;
+  logger = Logger.getInstance(_settings);
 };
 
 source.saveState = () => {
+  logger.trace(`source.saveState()`);
   return JSON.stringify(state);
 };
 
 source.enable = function (conf, settings, saveStateStr) {
+  logger.debug(`source.enable(conf=${conf}, settings=${settings}, saveStateStr=${saveStateStr})`);
   config = conf ?? {};
 
   _settings = { ...DEFAULT_SETTINGS, ...settings };
+  logger = Logger.getInstance(_settings);
 
   if (IS_TESTING) {
     config.id = '9c87e8db-e75d-48f4-afe5-2d203d4b95c5';
@@ -157,14 +163,17 @@ source.enable = function (conf, settings, saveStateStr) {
 };
 
 source.disable = function () {
+  logger.trace(`source.disable()`);
   return `Source ${PLATFORM} disabled`;
 };
 
 source.getHome = function () {
+  logger.trace(`source.getHome()`);
   return getHomePager({}, 0);
 };
 
 source.searchSuggestions = function (query): string[] {
+  logger.trace(`source.searchSuggestions(query=${query})`);
   try {
     const gqlResponse = executeGqlQuery(http, {
       operationName: 'AUTOCOMPLETE_QUERY',
@@ -185,22 +194,29 @@ source.searchSuggestions = function (query): string[] {
   }
 };
 
-source.getSearchCapabilities = (): ResultCapabilities => SEARCH_CAPABILITIES;
+source.getSearchCapabilities = (): ResultCapabilities => {
+  logger.trace(`source.getSearchCapabilities()`);
+  return SEARCH_CAPABILITIES;
+};
 
 source.search = function (query: string, type: string, order: string, filters) {
+  logger.trace(`source.search(query=${query}, type=${type}, order=${order}, filters=${filters})`);
   return getSearchPagerAll({ q: query, page: 1, type, order, filters });
 };
 
 source.searchChannels = function (query) {
+  logger.trace(`source.searchChannels(query=${query})`);
   return getSearchChannelPager({ q: query, page: 1 });
 };
 
 //region Channel
 source.isChannelUrl = function (url) {
+  logger.trace(`source.isChannelUrl(url=${url})`);
   return REGEX_CHANNEL_URL.test(url);
 };
 
 source.getChannel = function (url) {
+  logger.trace(`source.getChannel(url=${url})`);
 
   if(!state?.channelsCache){
     state.channelsCache = {};
@@ -230,11 +246,13 @@ source.getChannel = function (url) {
 };
 
 source.getChannelContents = function (url, type, order, filters) {
+  logger.trace(`source.getChannelContents(url=${url}, type=${type}, order=${order}, filters=${filters})`);
   const page = 1;
   return getChannelContentsPager(url, page, type, order, filters);
 };
 
 source.getChannelPlaylists = (url): SearchPlaylistPager => {
+  logger.trace(`source.getChannelPlaylists(url=${url})`);
   try {
     return getChannelPlaylists(url, 1);
   } catch (error) {
@@ -244,6 +262,7 @@ source.getChannelPlaylists = (url): SearchPlaylistPager => {
 };
 
 source.getChannelCapabilities = (): ResultCapabilities => {
+  logger.trace(`source.getChannelCapabilities()`);
   return {
     types: [Type.Feed.Mixed],
     sorts: [Type.Order.Chronological, 'Popular'],
@@ -251,20 +270,23 @@ source.getChannelCapabilities = (): ResultCapabilities => {
   };
 };
 
-//Video
+// region Video
 source.isContentDetailsUrl = function (url) {
-  return [REGEX_VIDEO_URL, REGEX_VIDEO_URL_1, REGEX_VIDEO_URL_EMBED].some((r) =>
+  logger.trace(`source.isContentDetailsUrl(url=${url})`);
+  return [REGEX_VIDEO_URL].some((r) =>
     r.test(url),
   );
 };
 
 source.getContentDetails = function (url) {
+  logger.trace(`source.getContentDetails(url=${url})`);
   return getSavedVideo(url, false);
 };
+// endregion Video
 
-
-
+// region Comments
 source.getSubComments = (comment) => {
+  logger.trace(`source.getSubComments(comment=${comment})`);
   const params = {
     count: 5,
     offset: 0,
@@ -276,6 +298,7 @@ source.getSubComments = (comment) => {
 };
 
 source.getComments = (url) => {
+  logger.trace(`source.getComments(url=${url})`);
   if (!config.allowAllHttpHeaderAccess) {
     return new PlatformCommentPager([], false, url, {}, 0);
   }
@@ -291,7 +314,7 @@ source.getComments = (url) => {
   return getCommentPager(url, params, 0);
 };
 
-function getCommentPager(url, params, page) {
+function getCommentPager(url: string, params: Record<string, any>, page: number) {
   try {
     const xid = url.split('/').pop();
 
@@ -345,7 +368,7 @@ function getCommentPager(url, params, page) {
       ++page,
     );
   } catch (error) {
-    bridge.log('Failed to get comments:' + error);
+    logger.error('Failed to get comments:' + error);
     return new PlatformCommentPager([], false, url, params, 0);
   }
 }
@@ -363,9 +386,11 @@ class PlatformCommentPager extends CommentPager {
     );
   }
 }
+// endregion Comments
 
-//Playlist
+//region Playlists
 source.isPlaylistUrl = (url): boolean => {
+  logger.trace(`source.isPlaylistUrl(url=${url})`);
   return (
     REGEX_VIDEO_PLAYLIST_URL.test(url) || [
       LIKED_VIDEOS_PLAYLIST_ID, 
@@ -376,11 +401,12 @@ source.isPlaylistUrl = (url): boolean => {
 };
 
 source.searchPlaylists = (query, type, order, filters) => {
+  logger.trace(`source.searchPlaylists(query=${query},type=${type},order=${order},filters=${filters})`);
   return searchPlaylists({ q: query, type, order, filters });
 };
 
 source.getPlaylist = (url: string): PlatformPlaylistDetails => {
-
+  logger.trace(`source.getPlaylist(url=${url})`);
   const thumbnailResolutionIndex = _settings.thumbnailResolutionOptionIndex;
 
   if (url === LIKED_VIDEOS_PLAYLIST_ID) {
@@ -444,6 +470,7 @@ source.getPlaylist = (url: string): PlatformPlaylistDetails => {
 };
 
 source.getUserSubscriptions = (): string[] => {
+  logger.trace(`source.getUserSubscriptions()`);
   if (!bridge.isLoggedIn()) {
     log('Failed to retrieve subscriptions page because not logged in.');
     throw new ScriptException('Not logged in');
@@ -493,6 +520,7 @@ source.getUserSubscriptions = (): string[] => {
 };
 
 source.getUserPlaylists = (): string[] => {
+  logger.trace(`source.getUserPlaylists()`);
   if (!bridge.isLoggedIn()) {
     log('Failed to retrieve subscriptions page because not logged in.');
     throw new ScriptException('Not logged in');
@@ -527,6 +555,7 @@ source.getUserPlaylists = (): string[] => {
 };
 
 source.getChannelTemplateByClaimMap = () => {
+  logger.trace(`source.getChannelTemplateByClaimMap()`);
   return {
     //Dailymotion claim type
     27: {
@@ -534,7 +563,7 @@ source.getChannelTemplateByClaimMap = () => {
     },
   };
 };
-
+// endregion Playlists
 // endregion Source Methods
 
 function getPlaylistsByUsername(
@@ -974,52 +1003,6 @@ function isTokenValid() {
   return state.anonymousUserAuthorizationTokenExpirationDate > currentTime;
 }
 
-function executeGqlQuery(httpClient, requestOptions) {
-  const headersToAdd = requestOptions.headers || applyCommonHeaders();
-
-  const gql = JSON.stringify({
-    operationName: requestOptions.operationName,
-    variables: requestOptions.variables,
-    query: requestOptions.query,
-  });
-
-  const usePlatformAuth =
-    requestOptions.usePlatformAuth == undefined
-      ? false
-      : requestOptions.usePlatformAuth;
-
-  const throwOnError =
-    requestOptions.throwOnError == undefined
-      ? true
-      : requestOptions.throwOnError;
-
-  if (!usePlatformAuth) {
-    headersToAdd.Authorization = state.anonymousUserAuthorizationToken;
-  }
-
-  const res = httpClient.POST(BASE_URL_API, gql, headersToAdd, usePlatformAuth);
-
-  if (!res.isOk) {
-    console.error('Failed to execute request', res);
-    if (throwOnError) {
-      throw new ScriptException('Failed to execute request', res);
-    }
-  }
-
-  const body = JSON.parse(res.body);
-
-  // some errors may be returned in the body with a status code 200
-  if (body.errors) {
-    const message = body.errors.map((e) => e.message).join(', ');
-
-    if (throwOnError) {
-      throw new UnavailableException(message);
-    }
-  }
-
-  return body;
-}
-
 function getPages<TI, TO>(
   httpClient: IHttp,
   query: string,
@@ -1152,8 +1135,9 @@ function getPlatformSystemPlaylist(
   );
 }
 
-function getPreferredCountry(preferredCountryIndex): CountryData {
+function getPreferredCountry(preferredCountryIndex: number = 0): CountryData {
   return Countries[preferredCountryIndex] ?? {name: `Unknown (${name})`, shortname: "US", currency: "Unknown", language: "English", continent: "Unknown"};
 }
+// endregion Internals
 
-log('LOADED');
+Logger.getInstance(DEFAULT_SETTINGS).info(`Instantiated`);

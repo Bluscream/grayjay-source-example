@@ -1195,13 +1195,13 @@ function parseSettings(settings) {
   return newSettings;
 }
 
-function log(obj: string | object) {
-  if (obj) {
-    console.log(obj);
-    if (typeof obj == 'string') bridge.log(obj);
-    else bridge.log(JSON.stringify(obj, null, 4));
-  }
-}
+// function log(obj: string | object) {
+//   if (obj) {
+//     console.log(obj);
+//     if (typeof obj == 'string') bridge.log(obj);
+//     else bridge.log(JSON.stringify(obj, null, 4));
+//   }
+// }
 
 function encodePathSegment(segment) {
   return encodeURIComponent(segment).replace(/[!'()*]/g, function (c) {

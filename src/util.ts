@@ -12,7 +12,7 @@ enum LogLevel {
   Trace
 }
 
-class Logger {
+export class Logger {
   private static instance: Logger;
   private settings: ISourcePluginSettings;
 
