@@ -44,7 +44,7 @@
             const hostname = window.location.hostname;
             
             if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-                const configUrl = new URL('DailymotionConfig.json', window.location.href).href;
+                const configUrl = new URL('config.json', window.location.href).href;
 
                 let qr = qrcode(0, 'L');
                 qr.addData(configUrl);
@@ -94,7 +94,7 @@
     </p>
     <div id="qrCodeContainer" class="qr-container"></div>
     <p>
-        <a href="./DailymotionConfig.json">Plugin Configuration</a>
+        <a href="./config.json">Plugin Configuration</a>
     </p>
 </body>
 
