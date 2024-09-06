@@ -1,68 +1,42 @@
 import {
-  Channel,
-  Collection,
-  Live,
   Maybe,
-  Video,
 } from '../types/CodeGen';
 
 import {
-  DailymotionStreamingContent,
-  IDailymotionSubtitle,
+
 } from '../types/types';
 
 import {
   BASE_URL,
   BASE_URL_PLAYLIST,
   BASE_URL_VIDEO,
-  NEGATIVE_RATINGS_LABELS,
+  BASE_URL_CHANNEL,
   PLATFORM,
   PLATFORM_CLAIMTYPE,
-  POSITIVE_RATINGS_LABELS,
 } from './constants';
+
+import {
+  convertSRTtoVTT
+} from './util'
 
 export const SourceChannelToGrayjayChannel = (
   pluginId: string,
-  sourceChannel: Channel,
+  sourceChannel: <Channel>,
 ): PlatformChannel => {
-  const externalLinks = sourceChannel?.externalLinks ?? {};
-
-  const links = Object.keys(externalLinks).reduce(
-    (acc, key) => {
-      if (externalLinks[key]) {
-        acc[key.replace('URL', '')] = externalLinks[key];
-      }
-      return acc;
-    },
-    {} as Record<string, string>,
-  );
-
-  let description = '';
-
-  if (
-    sourceChannel?.tagline &&
-    sourceChannel?.tagline != sourceChannel?.description
-  ) {
-    description = `${sourceChannel?.tagline}\n\n`;
-  }
-
-  description += `${sourceChannel?.description ?? ''}`;
 
   return new PlatformChannel({
     id: new PlatformID(
       PLATFORM,
-      sourceChannel?.id ?? '',
+      <CHANNEL_ID> ?? '',
       pluginId,
       PLATFORM_CLAIMTYPE,
     ),
-    name: sourceChannel?.displayName ?? '',
-    thumbnail: sourceChannel?.avatar?.url ?? '',
-    banner: sourceChannel.banner?.url ?? '',
-    subscribers:
-      sourceChannel?.metrics?.engagement?.followers?.edges?.[0]?.node?.total ??
-      0,
+    name: <CHANNEL_TITLE> ?? '',
+    thumbnail: <CHANNEL_AVATAR_URL> ?? '',
+    banner: <CHANNEL_BANNER_URL> ?? '',
+    subscribers: <CHANNEL_SUBSCRIBERS_COUNT> ?? 0,
     description,
-    url: `${BASE_URL}/${sourceChannel.name}`,
+    url: <CHANNEL_URL>,
     links,
   });
 };
@@ -72,19 +46,17 @@ export const SourceAuthorToGrayjayPlatformAuthorLink = (
   creator?: Maybe<Channel>,
 ): PlatformAuthorLink => {
   return new PlatformAuthorLink(
-    new PlatformID(PLATFORM, creator?.id ?? '', pluginId, PLATFORM_CLAIMTYPE),
-    creator?.displayName ?? '',
-    creator?.name ? `${BASE_URL}/${creator?.name}` : '',
-    creator?.avatar?.url ?? '',
-    creator?.followers?.totalCount ??
-      creator?.metrics?.engagement?.followers?.edges?.[0]?.node?.total ??
-      0,
+    new PlatformID(PLATFORM, <CHANNEL_ID> ?? '', pluginId, PLATFORM_CLAIMTYPE),
+    <CHANNEL_TITLE> ?? '',
+    <CHANNEL_NAME> ?? '',
+    <CHANNEL_AVATAR_URL> ?? '',
+    <CHANNEL_SUBSCRIBERS_COUNT> ?? 0,
   );
 };
 
 export const SourceVideoToGrayjayVideo = (
   pluginId: string,
-  sourceVideo?: DailymotionStreamingContent,
+  sourceVideo?: <Video>,
 ): PlatformVideo => {
   const isLive = getIsLive(sourceVideo);
   const viewCount = getViewCount(sourceVideo);
@@ -92,23 +64,23 @@ export const SourceVideoToGrayjayVideo = (
   const video: PlatformVideoDef = {
     id: new PlatformID(
       PLATFORM,
-      sourceVideo?.id ?? '',
+      <ID> ?? '',
       pluginId,
       PLATFORM_CLAIMTYPE,
     ),
-    description: sourceVideo?.description ?? '',
-    name: sourceVideo?.title ?? '',
+    description: <VIDEO_DESCRIPTION> ?? '',
+    name: <VIDEO_TITLE> ?? '',
     thumbnails: new Thumbnails([
-      new Thumbnail(sourceVideo?.thumbnail?.url ?? '', 0),
+      new Thumbnail(<THUMBNAIL_URL> ?? '', 0),
     ]),
     author: SourceAuthorToGrayjayPlatformAuthorLink(
       pluginId,
-      sourceVideo?.creator,
+      <CREATOR>,
     ),
-    uploadDate: Math.floor(new Date(sourceVideo?.createdAt).getTime() / 1000),
-    datetime: Math.floor(new Date(sourceVideo?.createdAt).getTime() / 1000),
-    url: `${BASE_URL_VIDEO}/${sourceVideo?.xid}`,
-    duration: (sourceVideo as Video)?.duration ?? 0,
+    uploadDate: Math.floor(new Date(<VIDEO_UPLOAD_DATE>.getTime() / 1000),
+    datetime: Math.floor(new Date(<VIDEO_UPLOAD_DATE>).getTime() / 1000),
+    url: <VIDEO_URL>,
+    duration: (sourceVideo as Video)<VIDEO_DURATION> ?? -1,
     viewCount,
     isLive,
   };
@@ -122,24 +94,22 @@ export const SourceCollectionToGrayjayPlaylistDetails = (
   videos: PlatformVideo[] = [],
 ): PlatformPlaylistDetails => {
   return new PlatformPlaylistDetails({
-    url: sourceCollection?.xid
-      ? `${BASE_URL_PLAYLIST}/${sourceCollection?.xid}`
-      : '',
+    url: <COLLECTION_URL> ?? '',
     id: new PlatformID(
       PLATFORM,
-      sourceCollection?.xid ?? '',
+      <COLLECTION_ID> ?? '',
       pluginId,
       PLATFORM_CLAIMTYPE,
     ),
-    author: sourceCollection?.creator
+    author: <COLLECTION_AUTHOR>
       ? SourceAuthorToGrayjayPlatformAuthorLink(
           pluginId,
-          sourceCollection?.creator,
+          <COLLECTION_AUTHOR>,
         )
       : {},
-    name: sourceCollection.name,
-    thumbnail: sourceCollection?.thumbnail?.url,
-    videoCount: videos.length ?? 0,
+    name: <COLLECTION_NAME>,
+    thumbnail: <COLLECTION_THUMBNAIL_URL>,
+    videoCount: <COLLECTION_COUNT> ?? 0,
     contents: new VideoPager(videos),
   });
 };
@@ -149,32 +119,31 @@ export const SourceCollectionToGrayjayPlaylist = (
   sourceCollection?: Maybe<Collection>,
 ): PlatformPlaylist => {
   return new PlatformPlaylist({
-    url: `${BASE_URL_PLAYLIST}/${sourceCollection?.xid}`,
+    url: <COLLECTION_URL> ?? '',
     id: new PlatformID(
       PLATFORM,
-      sourceCollection?.xid ?? '',
+      <COLLECTION_ID> ?? '',
       pluginId,
       PLATFORM_CLAIMTYPE,
     ),
     author: SourceAuthorToGrayjayPlatformAuthorLink(
       pluginId,
-      sourceCollection?.creator,
+      <COLLECTION_AUTHOR>,
     ),
-    name: sourceCollection?.name,
-    thumbnail: sourceCollection?.thumbnail?.url,
-    videoCount:
-      sourceCollection?.metrics?.engagement?.videos?.edges?.[0]?.node?.total,
+    name: <COLLECTION_NAME>,
+    thumbnail: <COLLECTION_THUMBNAIL_URL>,
+    videoCount: <COLLECTION_COUNT>
   });
 };
 
-const getIsLive = (sourceVideo?: DailymotionStreamingContent): boolean => {
+const getIsLive = (sourceVideo?: <VIDEO_DETAILS>): boolean => {
   return (
     (sourceVideo as Live)?.isOnAir === true ||
     (sourceVideo as Video)?.duration == undefined
   );
 };
 
-const getViewCount = (sourceVideo?: DailymotionStreamingContent): number => {
+const getViewCount = (sourceVideo?: <VIDEO_DETAILS>): number => {
   let viewCount = 0;
 
   if (getIsLive(sourceVideo)) {
@@ -301,34 +270,4 @@ export const SourceVideoToPlatformVideoDetailsDef = (
   }
 
   return platformVideoDetails;
-};
-
-/**
- * Converts SRT subtitle format to VTT format.
- *
- * @param {string} srt - The SRT subtitle string.
- * @returns {string} - The converted VTT subtitle string.
- */
-export const convertSRTtoVTT = (srt) => {
-  // Initialize the VTT output with the required header
-  const vtt = ['WEBVTT\n\n'];
-  // Split the SRT input into blocks based on double newlines
-  const srtBlocks = srt.split('\n\n');
-
-  // Process each block individually
-  srtBlocks.forEach((block) => {
-    // Split each block into lines
-    const lines = block.split('\n');
-    if (lines.length >= 3) {
-      // Extract and convert the timestamp line
-      const timestamp = lines[1].replace(/,/g, '.');
-      // Extract the subtitle text lines
-      const subtitleText = lines.slice(2).join('\n');
-      // Add the converted block to the VTT output
-      vtt.push(`${timestamp}\n${subtitleText}\n\n`);
-    }
-  });
-
-  // Join the VTT array into a single string and return it
-  return vtt.join('');
 };

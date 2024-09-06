@@ -1,70 +1,30 @@
 let config: Config;
-let _settings: IDailymotionPluginSettings;
+let _settings: ISourcePluginSettings;
 
 const state = {
-  anonymousUserAuthorizationToken: '',
-  anonymousUserAuthorizationTokenExpirationDate: 0,
-  commentWebServiceToken: '',
   channelsCache: {} as Record<string, PlatformChannel>
 };
 
+// region Imports
 import {
   BASE_URL,
   SEARCH_CAPABILITIES,
   BASE_URL_PLAYLIST,
   BASE_URL_API,
-  BASE_URL_METADATA,
   ERROR_TYPES,
-  LikedMediaSort,
   PLATFORM,
   BASE_URL_COMMENTS,
-  BASE_URL_COMMENTS_AUTH,
-  BASE_URL_COMMENTS_THUMBNAILS,
-  FAVORITE_VIDEOS_PLAYLIST_ID,
-  LIKED_VIDEOS_PLAYLIST_ID,
-  RECENTLY_WATCHED_VIDEOS_PLAYLIST_ID,
-  REGEX_VIDEO_CHANNEL_URL,
-  REGEX_VIDEO_PLAYLIST_URL,
   REGEX_VIDEO_URL,
-  REGEX_VIDEO_URL_1,
-  REGEX_VIDEO_URL_EMBED,
+  REGEX_CHANNEL_URL,
+  REGEX_PLAYLIST_URL,
   PRIVATE_PLAYLIST_QUERY_PARAM_FLAGGER,
-  FALLBACK_SPOT_ID,
+  DEFAULT_SETTINGS
 } from './constants';
-
-import {
-  AUTOCOMPLETE_QUERY,
-  CHANNEL_QUERY_DESKTOP,
-  PLAYLIST_DETAILS_QUERY,
-  GET_USER_SUBSCRIPTIONS,
-  SEARCH_QUERY,
-  SEACH_DISCOVERY_QUERY,
-  CHANNEL_VIDEOS_QUERY,
-  WATCHING_VIDEO,
-  SEARCH_CHANNEL,
-  CHANNEL_PLAYLISTS_QUERY,
-  SUBSCRIPTIONS_QUERY,
-  GET_CHANNEL_PLAYLISTS_XID,
-  USER_LIKED_VIDEOS_QUERY,
-  USER_WATCHED_VIDEOS_QUERY,
-  USER_WATCH_LATER_VIDEOS_QUERY,
-} from './gqlQueries';
 
 import { getChannelNameFromUrl, getQuery, generateUUIDv4, applyCommonHeaders } from './util';
 
 import {
-  Channel,
-  Collection,
-  CollectionConnection,
-  Live,
-  LiveConnection,
-  LiveEdge,
   Maybe,
-  SuggestionConnection,
-  User,
-  Video,
-  VideoConnection,
-  VideoEdge,
 } from '../types/CodeGen';
 
 import {
@@ -73,7 +33,7 @@ import {
   ChannelVideoPager,
   SearchPlaylistPager,
   ChannelPlaylistPager,
-} from './Pagers';
+} from './pagers';
 
 import {
   SourceChannelToGrayjayChannel,
@@ -81,63 +41,37 @@ import {
   SourceCollectionToGrayjayPlaylistDetails,
   SourceVideoToGrayjayVideo,
   SourceVideoToPlatformVideoDetailsDef,
-} from './Mappers';
+} from './mappers';
 
 import {
-  IDailymotionPluginSettings,
+  ISourcePluginSettings,
   IPlatformSystemPlaylist,
 } from '../types/types';
+
 import {
-  extractClientCredentials,
-  getTokenFromClientCredentials,
+
 } from './extraction';
 
+import {
+  Countries,
+  CountryData
+} from './countries'
+// endregion Imports
+
+
+
+// region Source Methods
 source.setSettings = function (settings) {
+  log(`source.setSettings(${settings})`);
   _settings = settings;
 };
 
-let COUNTRY_NAMES_TO_CODE: string[] = [];
-let VIDEOS_PER_PAGE_OPTIONS: number[] = [];
-let PLAYLISTS_PER_PAGE_OPTIONS: number[] = [];
-let CREATOR_AVATAR_HEIGHT: string[] = [];
-let THUMBNAIL_HEIGHT: string[] = [];
+source.saveState = () => {
+  return JSON.stringify(state);
+};
 
-//Source Methods
 source.enable = function (conf, settings, saveStateStr) {
   config = conf ?? {};
-
-  COUNTRY_NAMES_TO_CODE =
-    config?.settings?.find((s) => s.variable == 'preferredCountryOptionIndex')
-      ?.options ?? [];
-
-  VIDEOS_PER_PAGE_OPTIONS =
-    config?.settings
-      ?.find((s) => s.variable == 'videosPerPageOptionIndex')
-      ?.options?.map((s) => parseInt(s)) ?? [];
-
-  PLAYLISTS_PER_PAGE_OPTIONS =
-    config?.settings
-      ?.find((s) => s.variable == 'playlistsPerPageOptionIndex')
-      ?.options?.map((s) => parseInt(s)) ?? [];
-
-  CREATOR_AVATAR_HEIGHT =
-    config?.settings
-      ?.find((s) => s.variable == 'avatarSizeOptionIndex')
-      ?.options?.map((s) => `SQUARE_${s.replace('px', '')}`) ?? [];
-
-  THUMBNAIL_HEIGHT =
-    config?.settings
-      ?.find((s) => s.variable == 'thumbnailResolutionOptionIndex')
-      ?.options?.map((s) => `PORTRAIT_${s.replace('px', '')}`) ?? [];
-
-  const DEFAULT_SETTINGS = {
-    hideSensitiveContent: true,
-    avatarSizeOptionIndex: 8, // 720px
-    thumbnailResolutionOptionIndex: 7, // 1080px
-    preferredCountryOptionIndex: 0, // empty
-    videosPerPageOptionIndex: 3, // 20
-    playlistsPerPageOptionIndex: 0, // 5
-  };
 
   _settings = { ...DEFAULT_SETTINGS, ...settings };
 
@@ -186,7 +120,7 @@ source.enable = function (conf, settings, saveStateStr) {
 
     if (!isValid) {
       console.error('Failed to get token');
-      throw new ScriptException('Failed to get authentication token');
+      throw new ScriptException(null, 'Failed to get authentication token');
     }
 
     state.channelsCache = {};
@@ -219,6 +153,11 @@ source.enable = function (conf, settings, saveStateStr) {
       }
     }
   }
+  return `Source ${PLATFORM} enabled`;
+};
+
+source.disable = function () {
+  return `Source ${PLATFORM} disabled`;
 };
 
 source.getHome = function () {
@@ -256,9 +195,9 @@ source.searchChannels = function (query) {
   return getSearchChannelPager({ q: query, page: 1 });
 };
 
-//Channel
+//region Channel
 source.isChannelUrl = function (url) {
-  return REGEX_VIDEO_CHANNEL_URL.test(url);
+  return REGEX_CHANNEL_URL.test(url);
 };
 
 source.getChannel = function (url) {
@@ -323,9 +262,7 @@ source.getContentDetails = function (url) {
   return getSavedVideo(url, false);
 };
 
-source.saveState = () => {
-  return JSON.stringify(state);
-};
+
 
 source.getSubComments = (comment) => {
   const params = {
@@ -598,6 +535,8 @@ source.getChannelTemplateByClaimMap = () => {
   };
 };
 
+// endregion Source Methods
+
 function getPlaylistsByUsername(
   userName,
   headers,
@@ -691,7 +630,7 @@ function searchPlaylists(contextQuery) {
   );
 }
 
-//Internals
+// region Internals
 
 function getHomePager(params, page) {
   const count = VIDEOS_PER_PAGE_OPTIONS[_settings.videosPerPageOptionIndex];
@@ -1213,11 +1152,8 @@ function getPlatformSystemPlaylist(
   );
 }
 
-function getPreferredCountry(preferredCountryIndex) {
-  const country = COUNTRY_NAMES_TO_CODE[preferredCountryIndex];
-  const parts = country.split('-');
-  const code = parts[0] ?? '';
-  return (code || '').toLowerCase();
+function getPreferredCountry(preferredCountryIndex): CountryData {
+  return Countries[preferredCountryIndex] ?? {name: `Unknown (${name})`, shortname: "US", currency: "Unknown", language: "English", continent: "Unknown"};
 }
 
 log('LOADED');

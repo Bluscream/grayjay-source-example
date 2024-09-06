@@ -1,17 +1,15 @@
 import { Video, Live } from "./CodeGen";
 
-type DailymotionStreamingContent = Video | Live | null;
+type PlatformStreamingContent = Video | Live | null;
 
-interface IDailymotionPluginSettings {
-  hideSensitiveContent: boolean;
-  preferredCountryOptionIndex: number;
-  avatarSizeOptionIndex: number;
-  thumbnailResolutionOptionIndex: number;
-  videosPerPageOptionIndex: number;
-  playlistsPerPageOptionIndex: number;
+interface ISourcePluginSettings {
+  enable: boolean;
+  prefered_country_code_index: number;
+  log_level_log_index: number;
+  log_level_toast_index: number;
 }
 
-interface IDailymotionSubtitle {
+interface IPlatformSubtitle {
   data: Map<string, string, { urls: string[]; label: string }>;
   enable: boolean;
 }

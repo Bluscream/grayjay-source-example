@@ -7,7 +7,7 @@ declare class ScriptException extends Error {
   message: string;
 
   //If only one parameter is provided, acts as msg
-  constructor(type: string, msg: string) {
+  constructor(type: string, msg: string = null) {
     if (arguments.length == 1) {
       super(arguments[0]);
       this.plugin_type = 'ScriptException';
@@ -1374,6 +1374,17 @@ let domParser = {
 
 //Package Bridge (variable: bridge)
 let bridge = {
+   /**
+   * @return {String}
+   **/
+   buildFlavor: null,
+
+   /**
+   * @return {Int}
+   **/
+   buildVersion: null,
+
+
   /**
    * @param {String} label
    * @param {String} data
@@ -1512,4 +1523,49 @@ interface IPager<T> {
   hasMorePages(): Boolean;
   nextPage();
   getResults(): List<T>;
+}
+
+//Package Utilities (variable: utility)
+let utility = {
+  /**
+  * @param {String} str
+  * @return {ByteArray}
+  **/
+  fromBase64: function(str): ArrayBuffer {},
+
+  /**
+  * @param {ByteArray} arr
+  * @return {ByteArray}
+  **/
+  md5: function(arr): ArrayBuffer {},
+
+  /**
+  * @param {String} str
+  * @return {String}
+  **/
+  md5String: function(str): string {},
+
+  /**
+  * @return {String}
+  **/
+  randomUUID: function(): string {},
+
+  /**
+  * @param {ByteArray} arr
+  * @return {ByteArray}
+  **/
+  sha256: function(arr): ArrayBuffer {},
+
+  /**
+  * @param {String} str
+  * @return {String}
+  **/
+  sha256String: function(str): string {},
+
+  /**
+  * @param {ByteArray} arr
+  * @return {String}
+  **/
+  toBase64: function(arr): string {},
+
 }

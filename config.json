@@ -45,7 +45,7 @@
       "default": "true"
     },
     {
-      "variable": "prefered_country_code",
+      "variable": "prefered_country_code_index",
       "name": "Preferred Country / Language",
       "description": "Select your preferred country to get the best results",
       "type": "Dropdown",
@@ -304,7 +304,7 @@
       ]
     },
     {
-      "variable": "logLevelLog",
+      "variable": "log_level_log_index",
       "name": "Log Level for normal logging",
       "description": "Select which events will cause a message to be written to GrayJay's log file and debug web logger",
       "type": "Dropdown",
@@ -320,7 +320,7 @@
       ]
     },
     {
-      "variable": "logLevelToast",
+      "variable": "log_level_toast_index",
       "name": "Log Level for toasts",
       "description": "Select which events will cause a toast to pop up in the lower center of your screen",
       "type": "Dropdown",

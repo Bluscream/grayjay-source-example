@@ -2,6 +2,7 @@
   "name": "<SOURCE_PROJECT_NAME>",
   "version": "1.0.0",
   "scripts": {
+    "setup": "node setup.js",
     "build": "rollup -c",
     "start": "rollup -c -w",
     "prettier": "npx prettier --write ./src/**/*.ts"

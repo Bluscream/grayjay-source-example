@@ -1,6 +1,51 @@
-import { DEFAULT_HEADERS, DURATION_THRESHOLDS } from './constants';
+import { DEFAULT_HEADERS, PLATFORM_SHORT } from './constants';
 
-export const objectToUrlEncodedString = (obj) => {
+let errorLog: string = "";
+
+export const error = (message: string, error: any, _throw: boolean = false): void => {
+  const fmt: string = log(`${message}: ${error} (${JSON.stringify(error)})`, true);
+  if (_throw) {
+    const log: string = errorLog; errorLog = "";
+    throw new ScriptException(`${fmt}\n\n${log}`);
+  }
+}
+
+export const log = (message: any, toast: boolean = false): string => {
+  message = JSON.stringify(message);
+  const formattedMessage: string = `[${new Date().toISOString()}] [${PLATFORM_SHORT}] ${message}`;
+  log(formattedMessage);
+  if (toast) bridge.toast(message);
+  try {
+    if (logErrors) errorLog += `${errorLog}\n${message}`;
+  } catch (error) { }
+  return formattedMessage;
+}
+
+export const debug = (obj: any): void => {
+  bridge.throwTest((log(`Debug: ${JSON.stringify(obj)}`)));
+}
+
+export const prepend = (array: any[], value: any): any[] => {
+  const newArray: any[] = array.slice();
+  newArray.unshift(value);
+  return newArray;
+}
+
+export const isNullOrEmpty = (str: string | null): boolean => {
+  return str === null || str === "";
+}
+
+export const isObjectEmpty = (obj: object): boolean => {
+  return obj !== null && Object.keys(obj).length === 0;
+}
+
+export const atob = (encodedData: string): string => {
+  return String.fromCharCode(...utility.fromBase64(encodedData)); // type: ignore
+}
+
+export const btoa = (decodedData: string): string => utility.toBase64(decodedData)
+
+export const objectToUrlEncodedString = (obj: Record<string, string>): string => {
   const encodedParams: string[] = [];
 
   for (const key in obj) {
@@ -14,7 +59,7 @@ export const objectToUrlEncodedString = (obj) => {
   return encodedParams.join('&');
 };
 
-export function getChannelNameFromUrl(url) {
+export function getChannelNameFromUrl(url: string) {
   const channel_name = url.split('/').pop();
   return channel_name;
 }
@@ -79,7 +124,7 @@ export const parseSort = (order: string) => {
   return sort;
 };
 
-export const getQuery = (context) => {
+export const getQuery = (context: any) => {
   context.sort = parseSort(context.order);
 
   if (!context.filters) {
@@ -90,15 +135,15 @@ export const getQuery = (context) => {
     context.page = 1;
   }
 
-  if (context?.filters.duration) {
-    context.filters.durationMinVideos =
-      DURATION_THRESHOLDS[context.filters.duration].min;
-    context.filters.durationMaxVideos =
-      DURATION_THRESHOLDS[context.filters.duration].max;
-  } else {
+  // if (context?.filters.duration) {
+  //   context.filters.durationMinVideos =
+  //     DURATION_THRESHOLDS[context.filters.duration].min;
+  //   context.filters.durationMaxVideos =
+  //     DURATION_THRESHOLDS[context.filters.duration].max;
+  // } else {
     context.filters.durationMinVideos = null;
     context.filters.durationMaxVideos = null;
-  }
+  // }
 
   if (context.filters.uploaddate) {
     context.filters.createdAfterVideos = parseUploadDateFilter(
@@ -120,3 +165,33 @@ export function generateUUIDv4() {
 export function applyCommonHeaders(headers: Record<string, string>={}) : Record<string, string>{
   return { ...DEFAULT_HEADERS, ...headers };
 }
+
+/**
+ * Converts SRT subtitle format to VTT format.
+ *
+ * @param {string} srt - The SRT subtitle string.
+ * @returns {string} - The converted VTT subtitle string.
+ */
+export const convertSRTtoVTT = (srt: string) => {
+  // Initialize the VTT output with the required header
+  const vtt = ['WEBVTT\n\n'];
+  // Split the SRT input into blocks based on double newlines
+  const srtBlocks = srt.split('\n\n');
+
+  // Process each block individually
+  srtBlocks.forEach((block) => {
+    // Split each block into lines
+    const lines = block.split('\n');
+    if (lines.length >= 3) {
+      // Extract and convert the timestamp line
+      const timestamp = lines[1].replace(/,/g, '.');
+      // Extract the subtitle text lines
+      const subtitleText = lines.slice(2).join('\n');
+      // Add the converted block to the VTT output
+      vtt.push(`${timestamp}\n${subtitleText}\n\n`);
+    }
+  });
+
+  // Join the VTT array into a single string and return it
+  return vtt.join('');
+};
